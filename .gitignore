@@ -1,0 +1,13 @@
+target/
+*.jar
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project

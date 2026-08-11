@@ -1,0 +1,74 @@
+# ============================================================================
+#  FriendSystem — friends, direct messages and blocking
+#  Paper / Folia 26.2+
+# ============================================================================
+
+storage:
+  # sqlite (default, no setup needed) | mysql | mariadb
+  type: sqlite
+
+  sqlite:
+    # Relative to plugins/FriendSystem/
+    file: friendsystem.db
+
+  # Only used when type is mysql or mariadb.
+  remote:
+    host: localhost
+    port: 3306
+    database: friendsystem
+    username: root
+    password: ""
+    # Extra JDBC parameters, appended to the connection URL after a '?'.
+    properties: "useSSL=false&characterEncoding=utf8"
+
+  pool:
+    maximum-pool-size: 8
+    minimum-idle: 2
+    connection-timeout-ms: 10000
+
+messages:
+  # Seconds a player must wait between direct messages.
+  cooldown-seconds: 5
+  # Messages older than this are deleted from memory and from the database.
+  retention-hours: 72
+  # Longest message a player can send.
+  max-length: 150
+
+# Advancement toasts for new messages, friend requests and accepted requests.
+# Players can also turn them off individually in the settings dialog.
+toasts: true
+
+sounds:
+  message: block.note_block.bell
+  request: entity.player.levelup
+  accept: entity.player.levelup
+  click: ui.button.click
+  error: block.note_block.bass
+  block: block.anvil.land
+
+# Buttons that hand over to another plugin's command. Disable the ones your
+# server does not have — the button then disappears from the friend page.
+#   %player%  the friend's name
+#   %value%   true/false, for the auto-accept toggles
+integrations:
+  pay:
+    enabled: true
+    command: "pay %player%"
+  teleport:
+    enabled: true
+    command: "tpa %player%"
+  stats:
+    enabled: true
+    command: "stats %player%"
+  auto-accept-tpa:
+    enabled: true
+    command: "autoaccepttpafrom %player% %value%"
+  auto-accept-tpa-here:
+    enabled: true
+    command: "autoaccepttpaherefrom %player% %value%"
+  # When /friends settings is used there is no menu behind the dialog. Enable
+  # this to send the Back button to your server's own settings menu instead;
+  # with it disabled, Back opens the friends menu.
+  settings-back:
+    enabled: false
+    command: "settings"
