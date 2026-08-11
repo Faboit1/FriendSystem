@@ -204,6 +204,10 @@ public final class DialogFactory {
             : List.of();
 
         final List<ActionButton> actions = new ArrayList<>();
+        if (conversations.isEmpty()) {
+            // A multi-action dialog always needs at least one button to be worth opening.
+            actions.add(button(Icons.PREV + " Back to friends", null, 320, Routes.key(Routes.FRIENDS)));
+        }
         for (final UUID other : conversations) {
             final String name = this.store.name(other);
             final int unread = this.store.unread(me, other);
@@ -323,6 +327,10 @@ public final class DialogFactory {
             actions.add(iBlocked
                 ? button(Icons.CHECK + " Unblock", null, 155, Routes.key(Routes.UNBLOCK_CHAT, friend))
                 : button("<dark_red>" + Icons.BLOCK + " Block</dark_red>", null, 155, Routes.key(Routes.BLOCK_CHAT, friend)));
+        }
+        if (actions.isEmpty()) {
+            // Blocked by a friend, with nothing older to show: keep one way out.
+            actions.add(button(Icons.PREV + " Back", null, 320, Routes.key(Routes.CHAT_BACK, friend)));
         }
 
         return build(base(name, null, body, inputs),
