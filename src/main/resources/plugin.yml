@@ -1,0 +1,51 @@
+name: ${project.name}
+version: ${project.version}
+main: com.faboit.friendsystem.FriendSystemPlugin
+api-version: '26.2'
+folia-supported: true
+description: ${project.description}
+authors: [ faboit1 ]
+softdepend: [ PlaceholderAPI ]
+
+# Downloaded once by Paper's library loader and cached in the server's `libraries/`
+# folder. Only the driver matching `storage.type` is ever used at runtime.
+libraries:
+  - com.zaxxer:HikariCP:7.1.0
+  - org.xerial:sqlite-jdbc:3.53.2.1
+  - org.mariadb.jdbc:mariadb-java-client:3.5.10
+  - com.mysql:mysql-connector-j:9.7.0
+
+commands:
+  friends:
+    description: Open the friends & messaging menu, or run a quick action.
+    aliases: [ friend, fr ]
+    usage: /friends [add|remove|block|unblock|accept|deny|requests|blocked|settings] [name]
+    permission: friendsystem.use
+  message:
+    description: Message any player.
+    aliases: [ dm, msg, whisper, w ]
+    usage: /message <player> [message]
+    permission: friendsystem.use
+  reply:
+    description: Reply to your most recent direct message.
+    aliases: [ r ]
+    usage: /reply [message]
+    permission: friendsystem.use
+  fsopen:
+    description: (internal) Open a friend page from a clickable card.
+    usage: /fsopen <uuid>
+    permission: friendsystem.use
+
+permissions:
+  friendsystem.use:
+    description: Access to the friends menu and messaging commands.
+    default: true
+  friendsystem.mod:
+    description: Bypass direct-message privacy settings.
+    default: op
+  friendsystem.owner:
+    description: Bypass direct-message privacy settings.
+    default: op
+  friendsystem.color.*:
+    description: Use every chat colour for direct messages.
+    default: op
