@@ -1,5 +1,7 @@
 package com.faboit.friendsystem;
 
+import com.faboit.friendsystem.api.FriendSystemAPI;
+import com.faboit.friendsystem.api.FriendSystemProvider;
 import com.faboit.friendsystem.command.FriendsCommand;
 import com.faboit.friendsystem.command.FsOpenCommand;
 import com.faboit.friendsystem.command.MessageCommand;
@@ -10,6 +12,7 @@ import com.faboit.friendsystem.listener.ClickRouter;
 import com.faboit.friendsystem.listener.ConnectionListener;
 import com.faboit.friendsystem.papi.FriendPlaceholders;
 import com.faboit.friendsystem.service.FriendService;
+import com.faboit.friendsystem.service.FriendSystemImpl;
 import com.faboit.friendsystem.service.MessageService;
 import com.faboit.friendsystem.service.Notifier;
 import com.faboit.friendsystem.service.PlayerLookup;
@@ -28,6 +31,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -95,6 +99,7 @@ public final class FriendSystemPlugin extends JavaPlugin {
 
         this.startTasks(messages, tags);
         this.registerPlaceholders();
+        this.registerApi(new FriendSystemImpl(this.store, friends, messages, navigator));
 
         this.getLogger().info("FriendSystem enabled using "
             + config.storageType().name().toLowerCase(java.util.Locale.ROOT) + " storage.");
@@ -102,6 +107,8 @@ public final class FriendSystemPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        FriendSystemProvider.unregister();
+        this.getServer().getServicesManager().unregisterAll(this);
         Bukkit.getAsyncScheduler().cancelTasks(this);
         Bukkit.getGlobalRegionScheduler().cancelTasks(this);
         if (this.store != null) {
@@ -153,6 +160,15 @@ public final class FriendSystemPlugin extends JavaPlugin {
                 this.getLogger().fine("Pruned " + removed + " expired message(s).");
             }
         }, PRUNE_PERIOD_MINUTES, PRUNE_PERIOD_MINUTES, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Publishes the API both ways other plugins expect to find it: through Bukkit's
+     * service manager and through {@link FriendSystemProvider}.
+     */
+    private void registerApi(final FriendSystemAPI api) {
+        FriendSystemProvider.register(api);
+        this.getServer().getServicesManager().register(FriendSystemAPI.class, api, this, ServicePriority.Normal);
     }
 
     private void registerPlaceholders() {
