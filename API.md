@@ -142,8 +142,8 @@ FriendSystem runs on Paper **and Folia**, and the API is built for both.
 | **Actions** (send a message, add/remove a friend, block, open a dialog) | Must run on a **server thread**, and on Folia specifically the region thread that owns the `Player` you pass in. Inside a command, or an event handler for that player, you already are on it. From anywhere else, use `player.getScheduler().run(plugin, task -> ..., null)`. |
 | **Events** | Fired synchronously on the thread of the acting player. Handlers may touch that player directly, but must hop to `other.getScheduler()` before touching anyone else — and must not block, or they stall a whole region. |
 
-Actions that reach a wrong thread throw `IllegalStateException` with an explanatory
-message rather than corrupting state.
+An action that would fire its event from the wrong thread throws `IllegalStateException`
+with an explanatory message rather than corrupting state.
 
 Database writes are queued onto FriendSystem's own background thread, so no API call
 ever waits for I/O.
@@ -303,7 +303,7 @@ which is fine: queries are safe from any thread.
 ```java
 public final class FriendChatListener implements Listener {
 
-    @EventHandler(priority = EventPriority.LATE)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onChat(final AsyncChatEvent event) {
         final FriendSystemAPI api = FriendSystemProvider.get();
         final UUID speaker = event.getPlayer().getUniqueId();
