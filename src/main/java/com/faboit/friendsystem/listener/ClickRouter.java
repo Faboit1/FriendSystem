@@ -1,6 +1,8 @@
 package com.faboit.friendsystem.listener;
 
 import com.faboit.friendsystem.FriendConfig;
+import com.faboit.friendsystem.api.FriendRequestResult;
+import com.faboit.friendsystem.api.MessageResult;
 import com.faboit.friendsystem.data.DataStore;
 import com.faboit.friendsystem.data.PlayerSettings;
 import com.faboit.friendsystem.service.FriendService;
@@ -238,7 +240,7 @@ public final class ClickRouter implements Listener {
     }
 
     private void send(final Player player, final UUID target, final String text) {
-        final MessageService.Delivery result = this.messages.deliver(player, target, text);
+        final MessageResult result = this.messages.deliver(player, target, text);
         switch (result) {
             case COOLDOWN -> this.navigator.chat(player, target, text, "Please wait a bit before sending another message");
             case BLOCKED_BY_YOU -> {
@@ -266,7 +268,7 @@ public final class ClickRouter implements Listener {
             this.navigator.addFriend(player);
             return;
         }
-        final FriendService.AddResult result = this.friends.requestFriend(player, name);
+        final FriendRequestResult result = this.friends.requestFriend(player, name);
         this.friends.feedback(player, result, name);
         switch (result) {
             case SENT, ALREADY_FRIENDS, ACCEPTED -> this.navigator.friends(player);

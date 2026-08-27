@@ -1,5 +1,6 @@
 package com.faboit.friendsystem.command;
 
+import com.faboit.friendsystem.api.MessageResult;
 import com.faboit.friendsystem.data.DataStore;
 import com.faboit.friendsystem.service.MessageService;
 import com.faboit.friendsystem.service.Notifier;
@@ -46,8 +47,8 @@ public final class ReplyCommand implements CommandExecutor {
             this.navigator.chat(player, last);
             return true;
         }
-        final MessageService.Delivery result = this.messages.deliver(player, last, String.join(" ", args));
-        if (result == MessageService.Delivery.EMPTY) {
+        final MessageResult result = this.messages.deliver(player, last, String.join(" ", args));
+        if (result == MessageResult.EMPTY) {
             this.sessions.of(player).chatOrigin(Session.ORIGIN_DIRECT);
             this.navigator.chat(player, last);
         } else {

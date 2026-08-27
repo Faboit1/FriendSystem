@@ -1,6 +1,13 @@
 package com.faboit.friendsystem.service;
 
 import com.faboit.friendsystem.FriendConfig;
+import com.faboit.friendsystem.api.FriendRequestResult;
+import com.faboit.friendsystem.api.event.FriendAddEvent;
+import com.faboit.friendsystem.api.event.FriendBlockEvent;
+import com.faboit.friendsystem.api.event.FriendRemoveEvent;
+import com.faboit.friendsystem.api.event.FriendRequestDeclineEvent;
+import com.faboit.friendsystem.api.event.FriendRequestSendEvent;
+import com.faboit.friendsystem.api.event.FriendUnblockEvent;
 import com.faboit.friendsystem.data.DataStore;
 import java.util.UUID;
 import org.bukkit.entity.Player;
@@ -8,20 +15,6 @@ import org.bukkit.plugin.Plugin;
 
 /** Friend requests, friendships, blocking and ignoring. */
 public final class FriendService {
-
-    /** Outcome of a friend request attempt. */
-    public enum AddResult {
-        SENT,
-        /** They had already requested us, so the request was accepted instead. */
-        ACCEPTED,
-        ALREADY_FRIENDS,
-        ALREADY_SENT,
-        EMPTY,
-        UNKNOWN_PLAYER,
-        SELF,
-        BLOCKED_BY_YOU,
-        BLOCKED_BY_THEM
-    }
 
     private final Plugin plugin;
     private final DataStore store;
@@ -46,35 +39,55 @@ public final class FriendService {
     }
 
     /** Sends a friend request to the player with the given name. */
-    public AddResult requestFriend(final Player player, final String rawName) {
-        final UUID me = player.getUniqueId();
+    public FriendRequestResult requestFriend(final Player player, final String rawName) {
         if (rawName == null || rawName.isBlank()) {
-            return AddResult.EMPTY;
+            return FriendRequestResult.EMPTY;
         }
         final PlayerLookup.Resolved target = this.lookup.resolve(rawName);
         if (target == null) {
-            return AddResult.UNKNOWN_PLAYER;
+            return FriendRequestResult.UNKNOWN_PLAYER;
         }
-        final UUID other = target.uuid();
+        return this.request(player, target.uuid(), target.name());
+    }
+
+    /** Sends a friend request to a player we already have the UUID of. */
+    public FriendRequestResult requestFriend(final Player player, final UUID other) {
+        if (other == null) {
+            return FriendRequestResult.EMPTY;
+        }
+        final Player online = PlayerLookup.online(other);
+        if (online != null) {
+            return this.request(player, other, online.getName());
+        }
+        if (!this.store.hasName(other)) {
+            return FriendRequestResult.UNKNOWN_PLAYER;
+        }
+        return this.request(player, other, this.store.name(other));
+    }
+
+    private FriendRequestResult request(final Player player, final UUID other, final String name) {
+        final UUID me = player.getUniqueId();
         if (other.equals(me)) {
-            return AddResult.SELF;
+            return FriendRequestResult.SELF;
         }
         if (this.store.areFriends(me, other)) {
-            return AddResult.ALREADY_FRIENDS;
+            return FriendRequestResult.ALREADY_FRIENDS;
         }
         if (this.store.isBlocked(me, other)) {
-            return AddResult.BLOCKED_BY_YOU;
+            return FriendRequestResult.BLOCKED_BY_YOU;
         }
         if (this.store.isBlocked(other, me)) {
-            return AddResult.BLOCKED_BY_THEM;
+            return FriendRequestResult.BLOCKED_BY_THEM;
         }
-        this.store.rememberName(other, target.name());
+        this.store.rememberName(other, name);
         if (this.store.hasRequest(me, other)) {
-            this.accept(player, other);
-            return AddResult.ACCEPTED;
+            return this.accept(player, other) ? FriendRequestResult.ACCEPTED : FriendRequestResult.CANCELLED;
         }
         if (this.store.hasRequest(other, me)) {
-            return AddResult.ALREADY_SENT;
+            return FriendRequestResult.ALREADY_SENT;
+        }
+        if (!Events.call(new FriendRequestSendEvent(player, other, name))) {
+            return FriendRequestResult.CANCELLED;
         }
 
         this.store.addRequest(other, me);
@@ -90,11 +103,11 @@ public final class FriendService {
                 this.notifier.toasts().show(receiver, ToastService.REQUEST);
             });
         }
-        return AddResult.SENT;
+        return FriendRequestResult.SENT;
     }
 
     /** Action-bar feedback shared by the dialog and the {@code /friends add} command. */
-    public void feedback(final Player player, final AddResult result, final String name) {
+    public void feedback(final Player player, final FriendRequestResult result, final String name) {
         switch (result) {
             case SENT -> this.notifier.feedback(player, "<green>Friend request sent to " + name + "!</green>");
             case ALREADY_FRIENDS -> this.notifier.feedback(player, "<yellow>You're already friends.</yellow>");
@@ -110,9 +123,16 @@ public final class FriendService {
         }
     }
 
-    /** Accepts a pending request (in either direction) and tells both players. */
-    public void accept(final Player player, final UUID other) {
+    /**
+     * Accepts a pending request (in either direction) and tells both players.
+     *
+     * @return {@code false} when a plugin cancelled {@link FriendAddEvent}
+     */
+    public boolean accept(final Player player, final UUID other) {
         final UUID me = player.getUniqueId();
+        if (!Events.call(new FriendAddEvent(player, other))) {
+            return false;
+        }
         this.store.removeRequest(me, other);
         this.store.removeRequest(other, me);
         this.store.addFriendship(me, other);
@@ -133,26 +153,45 @@ public final class FriendService {
                 this.notifier.toasts().show(receiver, ToastService.ACCEPT);
             });
         }
+        return true;
     }
 
-    public void decline(final Player player, final UUID other) {
-        this.store.removeRequest(player.getUniqueId(), other);
-        this.tags.refresh(player.getUniqueId());
+    /** @return {@code false} when there was no request, or a plugin cancelled the event */
+    public boolean decline(final Player player, final UUID other) {
+        final UUID me = player.getUniqueId();
+        if (!this.store.hasRequest(me, other) || !Events.call(new FriendRequestDeclineEvent(player, other))) {
+            return false;
+        }
+        this.store.removeRequest(me, other);
+        this.tags.refresh(me);
         this.notifier.error(player);
+        return true;
     }
 
-    public void unfriend(final Player player, final UUID other) {
-        this.store.removeFriendship(player.getUniqueId(), other);
+    /** @return {@code false} when they were not friends, or a plugin cancelled the event */
+    public boolean unfriend(final Player player, final UUID other) {
+        final UUID me = player.getUniqueId();
+        if (!this.store.areFriends(me, other) || !Events.call(new FriendRemoveEvent(player, other))) {
+            return false;
+        }
+        this.store.removeFriendship(me, other);
         this.notifier.sound(player, this.config.soundError(), 1.0f, 0.8f);
         this.notifier.feedback(player, "<red>Removed " + this.store.name(other) + " from your friends.</red>");
+        return true;
     }
 
     /**
      * Blocks a player: the friendship and any pending requests go away, but the
      * conversation history stays readable for both sides.
+     *
+     * @return {@code false} when they were already blocked, or a plugin cancelled the event
      */
-    public void block(final Player player, final UUID other) {
+    public boolean block(final Player player, final UUID other) {
         final UUID me = player.getUniqueId();
+        if (this.store.isBlocked(me, other)
+            || !Events.call(new FriendBlockEvent(player, other, this.store.areFriends(me, other)))) {
+            return false;
+        }
         this.store.block(me, other);
         this.store.removeFriendship(me, other);
         this.store.removeRequest(me, other);
@@ -160,11 +199,18 @@ public final class FriendService {
         this.tags.refresh(me);
         this.notifier.sound(player, this.config.soundBlock(), 0.6f, 1.2f);
         this.notifier.feedback(player, "<dark_red>Blocked " + this.store.name(other) + ".</dark_red>");
+        return true;
     }
 
-    public void unblock(final Player player, final UUID other) {
-        this.store.unblock(player.getUniqueId(), other);
+    /** @return {@code false} when they were not blocked, or a plugin cancelled the event */
+    public boolean unblock(final Player player, final UUID other) {
+        final UUID me = player.getUniqueId();
+        if (!this.store.isBlocked(me, other) || !Events.call(new FriendUnblockEvent(player, other))) {
+            return false;
+        }
+        this.store.unblock(me, other);
         this.notifier.click(player);
+        return true;
     }
 
     /** Flips the ignore flag for a player and returns whether they are now ignored. */

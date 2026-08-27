@@ -1,5 +1,6 @@
 package com.faboit.friendsystem.command;
 
+import com.faboit.friendsystem.api.MessageResult;
 import com.faboit.friendsystem.data.DataStore;
 import com.faboit.friendsystem.service.MessageService;
 import com.faboit.friendsystem.service.Notifier;
@@ -62,8 +63,8 @@ public final class MessageCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         final String text = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-        final MessageService.Delivery result = this.messages.deliver(player, target.uuid(), text);
-        if (result == MessageService.Delivery.EMPTY) {
+        final MessageResult result = this.messages.deliver(player, target.uuid(), text);
+        if (result == MessageResult.EMPTY) {
             this.sessions.of(player).chatOrigin(Session.ORIGIN_DIRECT);
             this.navigator.chat(player, target.uuid());
         } else {

@@ -1,6 +1,7 @@
 package com.faboit.friendsystem.command;
 
 import com.faboit.friendsystem.FriendConfig;
+import com.faboit.friendsystem.api.FriendRequestResult;
 import com.faboit.friendsystem.data.DataStore;
 import com.faboit.friendsystem.service.FriendService;
 import com.faboit.friendsystem.service.Notifier;
@@ -59,7 +60,7 @@ public final class FriendsCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "add" -> {
                 if (this.requireName(player, args, "/friends add <name>")) {
-                    final FriendService.AddResult result = this.friends.requestFriend(player, args[1]);
+                    final FriendRequestResult result = this.friends.requestFriend(player, args[1]);
                     this.friends.feedback(player, result, args[1]);
                 }
             }
@@ -78,8 +79,11 @@ public final class FriendsCommand implements CommandExecutor, TabCompleter {
                 }
             });
             case "unblock" -> this.withResolved(player, args, "/friends unblock <name>", target -> {
-                this.friends.unblock(player, target);
-                this.notifier.feedback(player, "<green>Unblocked " + this.store.name(target) + ".</green>");
+                if (this.friends.unblock(player, target)) {
+                    this.notifier.feedback(player, "<green>Unblocked " + this.store.name(target) + ".</green>");
+                } else {
+                    this.notifier.feedback(player, "<yellow>That player isn't blocked.</yellow>");
+                }
             });
             case "accept" -> this.withResolved(player, args, "/friends accept <name>", target -> {
                 if (this.store.hasRequest(player.getUniqueId(), target)) {
@@ -89,8 +93,11 @@ public final class FriendsCommand implements CommandExecutor, TabCompleter {
                 }
             });
             case "deny", "decline" -> this.withResolved(player, args, "/friends deny <name>", target -> {
-                this.friends.decline(player, target);
-                this.notifier.feedback(player, "<gray>Declined " + this.store.name(target) + "'s friend request.</gray>");
+                if (this.friends.decline(player, target)) {
+                    this.notifier.feedback(player, "<gray>Declined " + this.store.name(target) + "'s friend request.</gray>");
+                } else {
+                    this.notifier.feedback(player, "<yellow>You have no friend request from that player.</yellow>");
+                }
             });
             case "requests" -> {
                 this.sessions.of(player).backCommand(null);

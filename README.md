@@ -32,6 +32,9 @@ Skript variables to a real database.
 - **`unread` scoreboard tag** on players with unread messages or pending requests, so
   `@a[tag=unread]` keeps working.
 - **PlaceholderAPI** support.
+- **Developer API** with events, so a chat plugin can show friends-only chat, a join
+  announcer can greet friends, and other plugins can add, remove, block and message
+  players themselves — see **[API.md](API.md)**.
 
 ## Requirements
 
@@ -126,6 +129,33 @@ are still honoured, so existing rank setups keep working.
 | `%friendsystem_offline_friends%` | Friends currently offline |
 | `%friendsystem_unread_messages%` | Unread direct messages |
 | `%friendsystem_incoming_friend_request%` | Pending friend requests |
+
+## For developers
+
+Other plugins can query friendships, listen to what players do, and drive FriendSystem
+themselves. The full guide is in **[API.md](API.md)**; the short version:
+
+```java
+FriendSystemAPI api = FriendSystemProvider.get();
+
+if (api.areFriends(a, b)) { ... }               // safe from any thread
+api.sendMessage(sender, receiver, "hello");     // on the sender's thread
+```
+
+```java
+@EventHandler
+public void onFriendJoin(final FriendJoinEvent event) {
+    for (Player friend : event.getOnlineFriends()) {
+        friend.getScheduler().run(plugin,
+            task -> friend.sendRichMessage("<green>" + event.getPlayer().getName() + " is online</green>"), null);
+    }
+}
+```
+
+Nine events cover requests, friendships, blocking, direct messages and friends joining
+or leaving; the cancellable ones let another plugin veto an action. Add
+`depend: [ FriendSystem ]` to your `plugin.yml` and compile against the jar with
+`provided` scope.
 
 ## Integrations
 
