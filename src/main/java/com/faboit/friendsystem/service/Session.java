@@ -6,10 +6,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Short-lived per-player UI state: which page of the friends list is open, what was
- * typed into the search box, how far back a conversation has been scrolled and when
- * the player last sent a message. None of this is worth a database row — it is
- * dropped when the player logs out.
+ * Short-lived per-player UI state: which page of the friends list is open, how far
+ * back a conversation has been scrolled and when the player last sent a message.
+ * None of this is worth a database row — it is dropped when the player logs out.
  */
 public final class Session {
 
@@ -19,19 +18,9 @@ public final class Session {
     public static final String ORIGIN_DMS = "dms";
 
     private final Map<String, Integer> showMore = new ConcurrentHashMap<>();
-    private volatile String search;
     private volatile int page = 1;
     private volatile String chatOrigin = ORIGIN_DIRECT;
-    private volatile String backCommand;
     private volatile Instant lastMessage;
-
-    public String search() {
-        return this.search;
-    }
-
-    public void search(final String search) {
-        this.search = search == null || search.isBlank() ? null : search.trim();
-    }
 
     public int page() {
         return this.page;
@@ -60,15 +49,6 @@ public final class Session {
 
     public void chatOrigin(final String chatOrigin) {
         this.chatOrigin = chatOrigin;
-    }
-
-    /** Command to run when leaving the settings dialog, when it was opened by a command. */
-    public String backCommand() {
-        return this.backCommand;
-    }
-
-    public void backCommand(final String backCommand) {
-        this.backCommand = backCommand;
     }
 
     /** True while the anti-spam cooldown from the last message is still running. */

@@ -14,24 +14,18 @@ public final class Routes {
 
     public static final String NAMESPACE = "friendsystem";
 
-    public static final String MENU = "menu";
     public static final String FRIENDS = "friends";
     public static final String DMS = "dms";
     public static final String REQUESTS = "requests";
     public static final String BLOCKED = "blocked";
-    public static final String SETTINGS = "settings";
-    public static final String SETTINGS_BACK = "settings_back";
     public static final String CLOSE = "close";
 
-    public static final String ADD_FRIEND = "add_friend";
     public static final String ADD_FRIEND_SUBMIT = "add_friend_submit";
     public static final String BLOCK_ADD = "block_add";
     public static final String BLOCK_ADD_SUBMIT = "block_add_submit";
 
     public static final String PAGE_PREV = "page_prev";
     public static final String PAGE_NEXT = "page_next";
-    public static final String SEARCH_SUBMIT = "search_submit";
-    public static final String SEARCH_CLEAR = "search_clear";
 
     public static final String FRIEND_PAGE = "friend_page";
     public static final String OPEN_CHAT = "open_chat";
@@ -54,19 +48,7 @@ public final class Routes {
     public static final String ACCEPT = "accept";
     public static final String DECLINE = "decline";
 
-    public static final String SET_VIEW = "set_view";
-    public static final String SET_TOASTS = "set_toasts";
-    public static final String SET_SOUNDS = "set_sounds";
-    public static final String SET_ACTIONBAR = "set_actionbar";
-    public static final String SET_REMINDER = "set_reminder";
-    public static final String SET_DM_PRIVACY = "set_dm_privacy";
-    public static final String SCALE_OPEN = "scale_open";
-    public static final String SCALE = "scale";
-    public static final String COLOR_OPEN = "color_open";
-    public static final String COLOR = "color";
-
     /** Text input keys, matched against {@code DialogResponseView#getText}. */
-    public static final String INPUT_QUERY = "query";
     public static final String INPUT_MESSAGE = "message_input";
     public static final String INPUT_NAME = "target_name";
 

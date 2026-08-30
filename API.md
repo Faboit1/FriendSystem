@@ -228,8 +228,8 @@ event, so another plugin can cancel it — always check the return value.
 | `unblock(Player, UUID target)` | `boolean` |
 | `markRead(UUID player, UUID other)` | `void` |
 | `setMessagePrivacy(UUID, MessagePrivacy)` | `void` |
-| `openMenu(Player)` | `void` — the `/friends` dialog |
-| `openFriendList(Player)` | `void` |
+| `openMenu(Player)` | `void` — alias of `openFriendList` |
+| `openFriendList(Player)` | `void` — the `/friends` dialog |
 | `openConversation(Player, UUID other)` | `void` — also marks it read |
 
 These go through exactly the same code as the dialogs and commands: notifications,

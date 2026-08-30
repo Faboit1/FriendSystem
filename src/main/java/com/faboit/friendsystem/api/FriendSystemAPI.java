@@ -174,7 +174,7 @@ public interface FriendSystemAPI {
 
     // ---------------------------------------------------------------------- ui
 
-    /** Opens the main {@code /friends} dialog. */
+    /** Opens the {@code /friends} dialog; an alias of {@link #openFriendList(Player)}. */
     void openMenu(Player player);
 
     /** Opens the friends list dialog. */

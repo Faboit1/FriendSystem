@@ -4,13 +4,11 @@ import com.faboit.friendsystem.FriendConfig;
 import com.faboit.friendsystem.api.FriendRequestResult;
 import com.faboit.friendsystem.api.MessageResult;
 import com.faboit.friendsystem.data.DataStore;
-import com.faboit.friendsystem.data.PlayerSettings;
 import com.faboit.friendsystem.service.FriendService;
 import com.faboit.friendsystem.service.MessageService;
 import com.faboit.friendsystem.service.Notifier;
 import com.faboit.friendsystem.service.Session;
 import com.faboit.friendsystem.service.SessionManager;
-import com.faboit.friendsystem.ui.Colors;
 import com.faboit.friendsystem.ui.Navigator;
 import com.faboit.friendsystem.ui.Routes;
 import io.papermc.paper.connection.PlayerGameConnection;
@@ -73,30 +71,12 @@ public final class ClickRouter implements Listener {
 
         switch (parsed.route()) {
             // ---------------------------------------------------- navigation
-            case Routes.MENU -> this.navigator.menu(player);
             case Routes.FRIENDS -> this.navigator.friends(player);
             case Routes.DMS -> this.navigator.directMessages(player);
             case Routes.REQUESTS -> this.navigator.requests(player);
             case Routes.BLOCKED -> this.navigator.blocked(player);
-            case Routes.ADD_FRIEND -> this.navigator.addFriend(player);
             case Routes.BLOCK_ADD -> this.navigator.blockAdd(player);
             case Routes.CLOSE -> this.navigator.close(player);
-            case Routes.SETTINGS -> {
-                session.backCommand(null);
-                this.navigator.settings(player);
-            }
-            case Routes.SETTINGS_BACK -> {
-                // /friends settings opens straight into the settings dialog with no menu
-                // behind it, so Back returns to the command that opened it instead.
-                final String back = session.backCommand();
-                if (back == null) {
-                    this.navigator.menu(player);
-                } else {
-                    session.backCommand(null);
-                    this.navigator.close(player);
-                    player.performCommand(back);
-                }
-            }
 
             // --------------------------------------------------- friend list
             case Routes.PAGE_PREV -> {
@@ -107,16 +87,6 @@ public final class ClickRouter implements Listener {
                 session.page(session.page() + 1);
                 this.navigator.friends(player);
             }
-            case Routes.SEARCH_SUBMIT -> {
-                session.search(text(response, Routes.INPUT_QUERY));
-                session.page(1);
-                this.navigator.friends(player);
-            }
-            case Routes.SEARCH_CLEAR -> {
-                session.search(null);
-                session.page(1);
-                this.navigator.friends(player);
-            }
             case Routes.FRIEND_PAGE -> this.withTarget(player, target, () -> this.navigator.friendPage(player, target));
 
             // -------------------------------------------------------- chats
@@ -124,12 +94,12 @@ public final class ClickRouter implements Listener {
             case Routes.DM_OPEN_CHAT -> this.openChat(player, target, Session.ORIGIN_DMS);
             case Routes.CHAT_BACK -> {
                 if (target == null) {
-                    this.navigator.menu(player);
+                    this.navigator.friends(player);
                 } else {
                     switch (session.chatOrigin()) {
                         case Session.ORIGIN_FRIEND_PAGE -> this.navigator.friendPage(player, target);
                         case Session.ORIGIN_DMS -> this.navigator.directMessages(player);
-                        default -> this.navigator.menu(player);
+                        default -> this.navigator.friends(player);
                     }
                 }
             }
@@ -192,36 +162,6 @@ public final class ClickRouter implements Listener {
             case Routes.ADD_FRIEND_SUBMIT -> this.submitAddFriend(player, text(response, Routes.INPUT_NAME));
             case Routes.BLOCK_ADD_SUBMIT -> this.submitBlock(player, text(response, Routes.INPUT_NAME));
 
-            // ------------------------------------------------------ settings
-            case Routes.SET_VIEW -> this.updateSettings(player, settings ->
-                settings.viewMode(settings.cards() ? PlayerSettings.VIEW_BUTTONS : PlayerSettings.VIEW_CARDS));
-            case Routes.SET_TOASTS -> this.updateSettings(player, settings -> settings.toasts(!settings.toasts()));
-            case Routes.SET_SOUNDS -> this.updateSettings(player, settings -> settings.sounds(!settings.sounds()));
-            case Routes.SET_ACTIONBAR -> this.updateSettings(player, settings -> settings.actionBar(!settings.actionBar()));
-            case Routes.SET_REMINDER -> this.updateSettings(player, settings -> settings.reminder(!settings.reminder()));
-            case Routes.SET_DM_PRIVACY -> {
-                this.notifier.click(player);
-                this.updateSettings(player, PlayerSettings::cycleDmPrivacy);
-            }
-            case Routes.SCALE_OPEN -> this.navigator.guiScale(player);
-            case Routes.SCALE -> {
-                final int scale = parseInt(parsed.argument());
-                if (scale > 0) {
-                    this.updateSettings(player, settings -> settings.guiScale(scale));
-                } else {
-                    this.navigator.settings(player);
-                }
-            }
-            case Routes.COLOR_OPEN -> this.navigator.colorPicker(player);
-            case Routes.COLOR -> {
-                final String color = parsed.argument();
-                if (color != null && Colors.exists(color) && Colors.canUse(player, color)) {
-                    this.notifier.sound(player, this.config.soundClick(), 1.0f, 1.2f);
-                    this.updateSettings(player, settings -> settings.color(color));
-                } else {
-                    this.navigator.settings(player);
-                }
-            }
             default -> {
                 // Unknown identifier: nothing to do, the dialog stays as it is.
             }
@@ -265,15 +205,12 @@ public final class ClickRouter implements Listener {
 
     private void submitAddFriend(final Player player, final String name) {
         if (name == null || name.isBlank()) {
-            this.navigator.addFriend(player);
-            return;
+            this.notifier.feedback(player, "<yellow>Type a username in the box first.</yellow>");
+        } else {
+            final FriendRequestResult result = this.friends.requestFriend(player, name);
+            this.friends.feedback(player, result, name);
         }
-        final FriendRequestResult result = this.friends.requestFriend(player, name);
-        this.friends.feedback(player, result, name);
-        switch (result) {
-            case SENT, ALREADY_FRIENDS, ACCEPTED -> this.navigator.friends(player);
-            default -> this.navigator.addFriend(player);
-        }
+        this.navigator.friends(player);
     }
 
     private void submitBlock(final Player player, final String name) {
@@ -294,7 +231,7 @@ public final class ClickRouter implements Listener {
         }
         this.store.rememberName(resolved.uuid(), resolved.name());
         this.friends.block(player, resolved.uuid());
-        this.navigator.friends(player);
+        this.navigator.blocked(player);
     }
 
     private void toggleAutoTpa(final Player player, final UUID target, final boolean here) {
@@ -319,16 +256,10 @@ public final class ClickRouter implements Listener {
         player.performCommand(integration.format(this.store.name(target), value));
     }
 
-    private void updateSettings(final Player player, final java.util.function.Consumer<PlayerSettings> change) {
-        change.accept(this.store.settings(player.getUniqueId()));
-        this.store.persistPlayer(player.getUniqueId());
-        this.navigator.settings(player);
-    }
-
-    /** Runs an action that needs a target, falling back to the menu when the id was malformed. */
+    /** Runs an action that needs a target, falling back to the friends list when the id was malformed. */
     private void withTarget(final Player player, final UUID target, final Runnable action) {
         if (target == null) {
-            this.navigator.menu(player);
+            this.navigator.friends(player);
             return;
         }
         action.run();
@@ -340,13 +271,5 @@ public final class ClickRouter implements Listener {
         }
         final String value = response.getText(key);
         return value == null ? "" : value;
-    }
-
-    private static int parseInt(final String raw) {
-        try {
-            return raw == null ? -1 : Integer.parseInt(raw);
-        } catch (final NumberFormatException ignored) {
-            return -1;
-        }
     }
 }

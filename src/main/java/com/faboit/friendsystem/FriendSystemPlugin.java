@@ -2,12 +2,19 @@ package com.faboit.friendsystem;
 
 import com.faboit.friendsystem.api.FriendSystemAPI;
 import com.faboit.friendsystem.api.FriendSystemProvider;
+import com.faboit.friendsystem.command.FriendSettingsCommand;
+import com.faboit.friendsystem.command.FriendViewCommand;
 import com.faboit.friendsystem.command.FriendsCommand;
 import com.faboit.friendsystem.command.FsOpenCommand;
+import com.faboit.friendsystem.command.GuiScaleCommand;
+import com.faboit.friendsystem.command.MessageColorCommand;
 import com.faboit.friendsystem.command.MessageCommand;
+import com.faboit.friendsystem.command.MessagePrivacyCommand;
 import com.faboit.friendsystem.command.ReplyCommand;
+import com.faboit.friendsystem.command.ToggleSettingCommand;
 import com.faboit.friendsystem.data.DataStore;
 import com.faboit.friendsystem.data.Database;
+import com.faboit.friendsystem.data.PlayerSettings;
 import com.faboit.friendsystem.listener.ClickRouter;
 import com.faboit.friendsystem.listener.ConnectionListener;
 import com.faboit.friendsystem.papi.FriendPlaceholders;
@@ -92,10 +99,11 @@ public final class FriendSystemPlugin extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(
             new ConnectionListener(this, this.store, sessions, tags, notifier), this);
 
-        this.bind("friends", new FriendsCommand(this.store, config, sessions, navigator, friends, notifier, lookup));
+        this.bind("friends", new FriendsCommand(this.store, navigator, friends, notifier, lookup));
         this.bind("message", new MessageCommand(this.store, sessions, navigator, messages, notifier, lookup));
         this.bind("reply", new ReplyCommand(this.store, sessions, navigator, messages, notifier));
         this.bind("fsopen", new FsOpenCommand(this.store, navigator));
+        this.bindSettingCommands(notifier);
 
         this.startTasks(messages, tags);
         this.registerPlaceholders();
@@ -120,6 +128,26 @@ public final class FriendSystemPlugin extends JavaPlugin {
         if (this.database != null) {
             this.database.close();
         }
+    }
+
+    /**
+     * One command per preference, standing in for the settings dialog the menu used
+     * to hold. The toggles share a single implementation and differ only in accessor.
+     */
+    private void bindSettingCommands(final Notifier notifier) {
+        this.bind("friendsettings", new FriendSettingsCommand(this.store, notifier));
+        this.bind("friendlistview", new FriendViewCommand(this.store, notifier));
+        this.bind("whocanmessageme", new MessagePrivacyCommand(this.store, notifier));
+        this.bind("setfriendguiscale", new GuiScaleCommand(this.store, notifier));
+        this.bind("setfriendcolor", new MessageColorCommand(this.store, notifier));
+        this.bind("showfriendtoasts", new ToggleSettingCommand(this.store, notifier, "showfriendtoasts",
+            "Friend toasts", PlayerSettings::toasts, PlayerSettings::toasts));
+        this.bind("friendsounds", new ToggleSettingCommand(this.store, notifier, "friendsounds",
+            "Friend sound effects", PlayerSettings::sounds, PlayerSettings::sounds));
+        this.bind("friendactionbar", new ToggleSettingCommand(this.store, notifier, "friendactionbar",
+            "Friend action bar", PlayerSettings::actionBar, PlayerSettings::actionBar));
+        this.bind("friendreminders", new ToggleSettingCommand(this.store, notifier, "friendreminders",
+            "Unread reminders", PlayerSettings::reminder, PlayerSettings::reminder));
     }
 
     private void bind(final String name, final CommandExecutor executor) {

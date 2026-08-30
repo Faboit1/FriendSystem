@@ -9,12 +9,9 @@ package com.faboit.friendsystem.ui;
  */
 public final class Icons {
 
-    public static final String FRIENDS = "<sprite:items:item/apple>";
     public static final String MAIL = "<sprite:items:item/writable_book>";
     public static final String PLUS = "<sprite:blocks:block/oak_sapling>";
     public static final String BLOCK = "<sprite:items:item/barrier>";
-    public static final String SETTINGS = "<sprite:items:item/redstone>";
-    public static final String SEARCH = "<sprite:items:item/spyglass>";
     public static final String CROSS = "<sprite:gui:container/beacon/cancel>";
     public static final String CHECK = "<sprite:gui:container/beacon/confirm>";
     public static final String PREV = "<sprite:items:item/spectral_arrow>";
@@ -30,10 +27,6 @@ public final class Icons {
     public static final String SEND = "<sprite:items:item/arrow>";
     public static final String TOGGLE_ON = "<sprite:blocks:block/redstone_lamp_on>";
     public static final String TOGGLE_OFF = "<sprite:blocks:block/redstone_lamp>";
-    public static final String VIEW = "<sprite:items:item/painting>";
-    public static final String PRIVACY = "<sprite:items:item/shield>";
-    public static final String SCALE = "<sprite:items:item/map>";
-    public static final String PALETTE = "<sprite:items:item/lime_dye>";
 
     private Icons() {
     }

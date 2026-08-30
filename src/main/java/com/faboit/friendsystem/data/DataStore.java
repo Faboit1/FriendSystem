@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -452,10 +451,5 @@ public final class DataStore {
         }
         result.sort(String.CASE_INSENSITIVE_ORDER);
         return Collections.unmodifiableList(result);
-    }
-
-    /** Case-insensitive "does this name contain the query" used by the friends search box. */
-    public static boolean matches(final String name, final String query) {
-        return name.toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT));
     }
 }

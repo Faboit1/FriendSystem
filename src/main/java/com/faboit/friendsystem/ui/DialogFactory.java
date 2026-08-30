@@ -54,43 +54,14 @@ public final class DialogFactory {
         this.sessions = sessions;
     }
 
-    // ------------------------------------------------------------------- menu
-
-    public Dialog menu(final Player player) {
-        final UUID me = player.getUniqueId();
-        final int friends = this.store.friendCount(me);
-        final int requests = this.store.requestCount(me);
-        final int blocked = this.store.blockedCount(me);
-        final int unread = this.store.totalUnread(me, false);
-
-        final String friendsLabel = unread > 0
-            ? Icons.FRIENDS + " Friends (" + friends + ") (" + unread + ')'
-            : Icons.FRIENDS + " Friends (" + friends + ')';
-
-        final List<DialogBody> body = List.of(this.card(me,
-            "<white><b>" + this.store.name(me) + "</b></white><newline><gray>"
-                + friends + " friends • " + unread + " unread</gray>"));
-
-        final List<ActionButton> actions = List.of(
-            button(friendsLabel, null, 320, Routes.key(Routes.FRIENDS)),
-            button(Icons.MAIL + " Requests (" + requests + ')', null, 320, Routes.key(Routes.REQUESTS)),
-            button(Icons.PLUS + " Add Friend", null, 320, Routes.key(Routes.ADD_FRIEND)),
-            button("<red>" + Icons.BLOCK + " Blocked (" + blocked + ")</red>", null, 320, Routes.key(Routes.BLOCKED)),
-            button(Icons.SETTINGS + " Settings", null, 320, Routes.key(Routes.SETTINGS)));
-
-        return build(base("Friends & Messages", "Friends", body, List.of()),
-            DialogType.multiAction(actions, null, 1));
-    }
-
     // ---------------------------------------------------------------- friends
 
     public Dialog friends(final Player player) {
         final UUID me = player.getUniqueId();
         final Session session = this.sessions.of(me);
         final PlayerSettings settings = this.store.settings(me);
-        final String query = session.search();
 
-        final List<UUID> ordered = this.orderedFriends(me, query);
+        final List<UUID> ordered = this.orderedFriends(me);
         final int total = ordered.size();
         final int perPage = settings.friendsPerPage();
         final int pages = Math.max(1, (int) Math.ceil(total / (double) perPage));
@@ -100,13 +71,15 @@ public final class DialogFactory {
         final int last = Math.min(page * perPage, total);
         final List<UUID> shown = first >= last ? List.of() : ordered.subList(first, last);
 
+        final int requests = this.store.requestCount(me);
+        final int blocked = this.store.blockedCount(me);
         final int dmUnread = this.store.totalUnread(me, true);
         final String dmLabel = dmUnread > 0 ? Icons.MAIL + " DMs (" + dmUnread + ')' : Icons.MAIL + " DMs";
 
         final List<DialogBody> body = new ArrayList<>();
         if (total == 0) {
-            body.add(DialogBody.plainMessage(
-                mm("<gray>No friends to show. Use <white>Add Friend</white> on the menu.</gray>"), 320));
+            body.add(DialogBody.plainMessage(mm(
+                "<gray>No friends yet. Type a username above and hit <white>Add Friend</white>.</gray>"), 320));
         } else if (settings.cards()) {
             for (final UUID friend : shown) {
                 body.add(this.friendCard(me, friend));
@@ -114,14 +87,21 @@ public final class DialogFactory {
         }
 
         final List<DialogInput> inputs = List.of(DialogInput.text(
-            Routes.INPUT_QUERY, 300, Component.text("Search"), false, query == null ? "" : query, 16, null));
+            Routes.INPUT_NAME, 300, Component.text("Add a player"), true, "", 16, null));
 
         final List<ActionButton> actions = new ArrayList<>();
-        actions.add(button(Icons.SEARCH + " Search", null, 155, Routes.key(Routes.SEARCH_SUBMIT)));
-        actions.add(button(Icons.CROSS + " Clear", null, 155, Routes.key(Routes.SEARCH_CLEAR)));
+        actions.add(button(Icons.PLUS + " Add Friend",
+            "<green><b>Add Friend</b></green><newline><gray>Sends a request to the username typed above.</gray>",
+            155, Routes.key(Routes.ADD_FRIEND_SUBMIT)));
+        actions.add(button(Icons.MAIL + " Requests (" + requests + ')',
+            "<white><b>Friend Requests</b></white><newline><gray>Accept or decline pending requests.</gray>",
+            155, Routes.key(Routes.REQUESTS)));
         actions.add(button(dmLabel,
             "<light_purple><b>Direct Messages</b></light_purple><newline><gray>View everyone with unread messages.</gray>",
             155, Routes.key(Routes.DMS)));
+        actions.add(button("<red>" + Icons.BLOCK + " Blocked (" + blocked + ")</red>",
+            "<red><b>Blocked Players</b></red><newline><gray>Review or lift your blocks.</gray>",
+            155, Routes.key(Routes.BLOCKED)));
 
         if (!settings.cards()) {
             for (final UUID friend : shown) {
@@ -136,20 +116,16 @@ public final class DialogFactory {
             actions.add(button("Next " + Icons.NEXT, null, 155, Routes.key(Routes.PAGE_NEXT)));
         }
 
-        return build(base("Your Friends (" + page + '/' + pages + ')', "Friends", body, inputs),
-            DialogType.multiAction(actions, backButton(Routes.key(Routes.MENU)), 3));
+        final String title = pages > 1 ? "Friends (" + page + '/' + pages + ')' : "Friends";
+        return build(base(title, "Friends", body, inputs), DialogType.multiAction(actions, null, 3));
     }
 
     /** Unread conversations first, then online friends, then everyone else. */
-    private List<UUID> orderedFriends(final UUID me, final String query) {
+    private List<UUID> orderedFriends(final UUID me) {
         final List<UUID> unread = new ArrayList<>();
         final List<UUID> online = new ArrayList<>();
         final List<UUID> offline = new ArrayList<>();
         for (final UUID friend : this.store.friendsOf(me)) {
-            final String name = this.store.name(friend);
-            if (query != null && !DataStore.matches(name, query)) {
-                continue;
-            }
             if (this.store.unread(me, friend) > 0) {
                 unread.add(friend);
             } else if (PlayerLookup.isOnline(friend)) {
@@ -350,7 +326,7 @@ public final class DialogFactory {
 
         final List<ActionButton> actions = new ArrayList<>();
         if (pending.isEmpty()) {
-            actions.add(button(Icons.PREV + " Back to menu", null, 320, Routes.key(Routes.MENU)));
+            actions.add(button(Icons.PREV + " Back to friends", null, 320, Routes.key(Routes.FRIENDS)));
         }
         for (final UUID requester : pending) {
             final String name = this.store.name(requester);
@@ -363,7 +339,7 @@ public final class DialogFactory {
         }
 
         return build(base("Friend Requests (" + pending.size() + ')', null, body, List.of()),
-            DialogType.multiAction(actions, backButton(Routes.key(Routes.MENU)), 2));
+            DialogType.multiAction(actions, backButton(Routes.key(Routes.FRIENDS)), 2));
     }
 
     // ---------------------------------------------------------------- blocked
@@ -384,21 +360,10 @@ public final class DialogFactory {
         actions.add(button("<red>" + Icons.BLOCK + " Block a player</red>", null, 320, Routes.key(Routes.BLOCK_ADD)));
 
         return build(base("Blocked Players (" + blocked.size() + ')', null, body, List.of()),
-            DialogType.multiAction(actions, backButton(Routes.key(Routes.MENU)), 1));
+            DialogType.multiAction(actions, backButton(Routes.key(Routes.FRIENDS)), 1));
     }
 
-    // ----------------------------------------------------------- name prompts
-
-    public Dialog addFriend() {
-        final List<DialogBody> body = List.of(DialogBody.plainMessage(
-            mm("<gray>Type the exact username of the player you want to add.</gray>"), 320));
-        final List<DialogInput> inputs = List.of(
-            DialogInput.text(Routes.INPUT_NAME, 320, Component.text("Username"), true, "", 16, null));
-        final List<ActionButton> actions = List.of(
-            button("Send Request " + Icons.SEND, null, 320, Routes.key(Routes.ADD_FRIEND_SUBMIT)));
-        return build(base("Add a Friend", null, body, inputs),
-            DialogType.multiAction(actions, backButton(Routes.key(Routes.MENU)), 1));
-    }
+    // ------------------------------------------------------------ block prompt
 
     public Dialog blockAdd() {
         final List<DialogBody> body = List.of(DialogBody.plainMessage(
@@ -409,58 +374,6 @@ public final class DialogFactory {
             button("<red>Block Player</red>", null, 320, Routes.key(Routes.BLOCK_ADD_SUBMIT)));
         return build(base("Block a Player", null, body, inputs),
             DialogType.multiAction(actions, backButton(Routes.key(Routes.BLOCKED)), 1));
-    }
-
-    // --------------------------------------------------------------- settings
-
-    public Dialog settings(final Player player) {
-        final PlayerSettings settings = this.store.settings(player.getUniqueId());
-        final List<ActionButton> actions = List.of(
-            button(Icons.VIEW + " Friend view: " + (settings.cards() ? "Cards (heads)" : "Buttons"),
-                null, 320, Routes.key(Routes.SET_VIEW)),
-            button(Icons.toggle(settings.toasts()) + " Toasts: " + Icons.onOff(settings.toasts()),
-                null, 320, Routes.key(Routes.SET_TOASTS)),
-            button(Icons.toggle(settings.sounds()) + " Sound effects: " + Icons.onOff(settings.sounds()),
-                null, 320, Routes.key(Routes.SET_SOUNDS)),
-            button(Icons.toggle(settings.actionBar()) + " Action bar: " + Icons.onOff(settings.actionBar()),
-                null, 320, Routes.key(Routes.SET_ACTIONBAR)),
-            button(Icons.toggle(settings.reminder()) + " Unread reminder: " + Icons.onOff(settings.reminder()),
-                null, 320, Routes.key(Routes.SET_REMINDER)),
-            button(Icons.PRIVACY + " Who can message me: " + settings.privacyDisplayName(),
-                null, 320, Routes.key(Routes.SET_DM_PRIVACY)),
-            button(Icons.SCALE + " GUI Scale: " + settings.guiScale(), null, 320, Routes.key(Routes.SCALE_OPEN)),
-            button(Icons.PALETTE + ' ' + Colors.wrap(settings.color(), false, "Customize Color"),
-                null, 320, Routes.key(Routes.COLOR_OPEN)));
-
-        return build(base("Settings", null, List.of(), List.of()),
-            DialogType.multiAction(actions, backButton(Routes.key(Routes.SETTINGS_BACK)), 1));
-    }
-
-    public Dialog guiScale() {
-        final List<DialogBody> body = List.of(DialogBody.plainMessage(mm(
-            "<gray>Sets how many chat messages and friends per page show before scrolling/paging. "
-                + "<yellow>Match it to your actual Minecraft GUI Scale</yellow> (Options ▸ Video Settings ▸ GUI Scale). "
-                + "<newline>If unsure, leave it at <white>4 / Auto</white>.</gray>"), 340));
-        final List<ActionButton> actions = List.of(
-            button("GUI Scale 4 / Auto", null, 320, Routes.key(Routes.SCALE, "4")),
-            button("GUI Scale 3", null, 320, Routes.key(Routes.SCALE, "3")),
-            button("GUI Scale 2", null, 320, Routes.key(Routes.SCALE, "2")),
-            button("GUI Scale 1", null, 320, Routes.key(Routes.SCALE, "1")));
-        return build(base("GUI Scale", null, body, List.of()),
-            DialogType.multiAction(actions, backButton(Routes.key(Routes.SETTINGS)), 1));
-    }
-
-    public Dialog colorPicker(final Player player) {
-        final List<DialogBody> body = List.of(DialogBody.plainMessage(mm(
-            "<gray>Pick your message color. Your own messages show a lighter, pastel version.</gray>"), 340));
-        final List<ActionButton> actions = new ArrayList<>();
-        for (final String color : Colors.ALL) {
-            if (Colors.canUse(player, color)) {
-                actions.add(button(Colors.wrap(color, false, color), null, 105, Routes.key(Routes.COLOR, color)));
-            }
-        }
-        return build(base("Customize Color", null, body, List.of()),
-            DialogType.multiAction(actions, backButton(Routes.key(Routes.SETTINGS)), 3));
     }
 
     // ---------------------------------------------------------------- helpers

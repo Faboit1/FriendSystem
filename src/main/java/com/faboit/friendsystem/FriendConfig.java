@@ -76,7 +76,6 @@ public final class FriendConfig {
     private final Integration stats;
     private final Integration autoAcceptTpa;
     private final Integration autoAcceptTpaHere;
-    private final Integration settingsBack;
 
     public FriendConfig(final FileConfiguration cfg) {
         this.storageType = StorageType.parse(cfg.getString("storage.type", "sqlite"));
@@ -108,10 +107,6 @@ public final class FriendConfig {
         this.stats = integration(cfg, "integrations.stats", "stats %player%");
         this.autoAcceptTpa = integration(cfg, "integrations.auto-accept-tpa", "autoaccepttpafrom %player% %value%");
         this.autoAcceptTpaHere = integration(cfg, "integrations.auto-accept-tpa-here", "autoaccepttpaherefrom %player% %value%");
-        final ConfigurationSection back = cfg.getConfigurationSection("integrations.settings-back");
-        this.settingsBack = new Integration(
-            back != null && back.getBoolean("enabled", false),
-            back == null ? "settings" : back.getString("command", "settings"));
     }
 
     private static Integration integration(final FileConfiguration cfg, final String path, final String fallback) {
@@ -217,10 +212,5 @@ public final class FriendConfig {
 
     public Integration autoAcceptTpaHere() {
         return this.autoAcceptTpaHere;
-    }
-
-    /** Where the settings dialog's Back button goes when it was opened by a command. */
-    public Integration settingsBack() {
-        return this.settingsBack;
     }
 }

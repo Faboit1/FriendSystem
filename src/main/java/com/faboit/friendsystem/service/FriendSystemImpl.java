@@ -247,7 +247,7 @@ public final class FriendSystemImpl implements FriendSystemAPI {
 
     @Override
     public void openMenu(final Player player) {
-        this.navigator.menu(player);
+        this.navigator.friends(player);
     }
 
     @Override
