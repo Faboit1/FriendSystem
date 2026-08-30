@@ -18,10 +18,6 @@ public final class Navigator {
         this.messages = messages;
     }
 
-    public void menu(final Player player) {
-        player.showDialog(this.dialogs.menu(player));
-    }
-
     public void friends(final Player player) {
         player.showDialog(this.dialogs.friends(player));
     }
@@ -52,24 +48,8 @@ public final class Navigator {
         player.showDialog(this.dialogs.blocked(player));
     }
 
-    public void addFriend(final Player player) {
-        player.showDialog(this.dialogs.addFriend());
-    }
-
     public void blockAdd(final Player player) {
         player.showDialog(this.dialogs.blockAdd());
-    }
-
-    public void settings(final Player player) {
-        player.showDialog(this.dialogs.settings(player));
-    }
-
-    public void guiScale(final Player player) {
-        player.showDialog(this.dialogs.guiScale());
-    }
-
-    public void colorPicker(final Player player) {
-        player.showDialog(this.dialogs.colorPicker(player));
     }
 
     public void close(final Player player) {

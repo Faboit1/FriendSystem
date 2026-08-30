@@ -17,9 +17,9 @@ libraries:
 
 commands:
   friends:
-    description: Open the friends & messaging menu, or run a quick action.
+    description: Open your friends list, or run a quick action.
     aliases: [ friend, fr ]
-    usage: /friends [add|remove|block|unblock|accept|deny|requests|blocked|settings] [name]
+    usage: /friends [add|remove|block|unblock|accept|deny|requests|blocked] [name]
     permission: friendsystem.use
   message:
     description: Message any player.
@@ -34,6 +34,51 @@ commands:
   fsopen:
     description: (internal) Open a friend page from a clickable card.
     usage: /fsopen <uuid>
+    permission: friendsystem.use
+  friendsettings:
+    description: Show all of your friend-system preferences and how to change them.
+    aliases: [ friendsetting, fsettings ]
+    usage: /friendsettings
+    permission: friendsystem.use
+  friendlistview:
+    description: Show your friends list as buttons or as head cards.
+    aliases: [ setfriendlistview ]
+    usage: /friendlistview <buttons|cards>
+    permission: friendsystem.use
+  showfriendtoasts:
+    description: Turn friend-system toast popups on or off.
+    aliases: [ friendtoasts ]
+    usage: /showfriendtoasts [on|off]
+    permission: friendsystem.use
+  friendsounds:
+    description: Turn friend-system sound effects on or off.
+    aliases: [ showfriendsounds ]
+    usage: /friendsounds [on|off]
+    permission: friendsystem.use
+  friendactionbar:
+    description: Turn friend-system action-bar notifications on or off.
+    aliases: [ showfriendactionbar ]
+    usage: /friendactionbar [on|off]
+    permission: friendsystem.use
+  friendreminders:
+    description: Turn the periodic unread-message reminder on or off.
+    aliases: [ friendreminder, showfriendreminders ]
+    usage: /friendreminders [on|off]
+    permission: friendsystem.use
+  whocanmessageme:
+    description: Choose who is allowed to send you direct messages.
+    aliases: [ friendprivacy, setfriendprivacy ]
+    usage: /whocanmessageme <everyone|friendsoffriends|friends|nobody>
+    permission: friendsystem.use
+  setfriendguiscale:
+    description: Match the friends GUI paging to your client's GUI scale.
+    aliases: [ friendguiscale ]
+    usage: /setfriendguiscale <1-4>
+    permission: friendsystem.use
+  setfriendcolor:
+    description: Set the colour your direct messages are shown in.
+    aliases: [ setfriendcolour, friendcolor, friendcolour ]
+    usage: /setfriendcolor <colour>
     permission: friendsystem.use
 
 permissions:

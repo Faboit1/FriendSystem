@@ -11,11 +11,10 @@ Skript variables to a real database.
 
 ## Features
 
-- **Friends menu** (`/friends`) with friend count, unread badge, requests, blocked
-  players and settings.
-- **Friends list** with search, paging, and two view modes — plain buttons, or cards
-  with player heads and clickable names. Unread conversations sort first, then online
-  friends, then everyone else.
+- **Friends list** (`/friends`) opens straight away, with paging, an add-a-player box
+  and buttons through to requests, DMs and blocked players.
+- **Two view modes** — plain buttons, or cards with player heads and clickable names.
+  Unread conversations sort first, then online friends, then everyone else.
 - **Direct messages** to anyone, friend or not, from a dialog or straight from the
   command line. Messages are mirrored into normal chat for both players, and each
   player picks the colour their own messages appear in.
@@ -94,12 +93,12 @@ region thread stalls a whole slice of the world.
 
 | Command | Aliases | What it does |
 |---|---|---|
-| `/friends` | `/friend`, `/fr` | Opens the menu |
+| `/friends` | `/friend`, `/fr` | Opens your friends list |
 | `/friends add <name>` | | Sends a friend request |
 | `/friends remove <name>` | `unfriend` | Removes a friend |
 | `/friends block\|unblock <name>` | | Blocks / unblocks a player |
 | `/friends accept\|deny <name>` | `decline` | Answers a friend request |
-| `/friends requests\|blocked\|settings` | | Opens that dialog directly |
+| `/friends requests\|blocked` | | Opens that dialog directly |
 | `/message <player> [text]` | `/dm`, `/msg`, `/whisper`, `/w` | Opens a chat, or sends a message |
 | `/reply [text]` | `/r` | Continues the most recent conversation |
 | `/fsopen <uuid>` | | Internal, used by the clickable cards |
@@ -107,11 +106,28 @@ region thread stalls a whole slice of the world.
 Tab completion suggests the right names for each subcommand: friends for `remove`,
 blocked players for `unblock`, incoming requests for `accept` and `deny`.
 
+### Settings
+
+Every preference has its own command instead of a settings dialog. The four on/off
+commands flip the setting when you leave the argument off.
+
+| Command | Aliases | What it does |
+|---|---|---|
+| `/friendsettings` | `/friendsetting`, `/fsettings` | Lists every preference and the command that changes it |
+| `/friendlistview <buttons\|cards>` | `/setfriendlistview` | Plain buttons, or cards with player heads |
+| `/showfriendtoasts [on\|off]` | `/friendtoasts` | Toast popups for requests and messages |
+| `/friendsounds [on\|off]` | `/showfriendsounds` | Sound effects |
+| `/friendactionbar [on\|off]` | `/showfriendactionbar` | Action-bar notifications |
+| `/friendreminders [on\|off]` | `/friendreminder`, `/showfriendreminders` | The periodic unread-message reminder |
+| `/whocanmessageme <everyone\|friendsoffriends\|friends\|nobody>` | `/friendprivacy`, `/setfriendprivacy` | Who may send you direct messages |
+| `/setfriendguiscale <1-4>` | `/friendguiscale` | Friends and chat lines per page; match your client's GUI Scale |
+| `/setfriendcolor <colour>` | `/setfriendcolour`, `/friendcolor`, `/friendcolour` | The colour your direct messages are shown in |
+
 ## Permissions
 
 | Permission | Default | Purpose |
 |---|---|---|
-| `friendsystem.use` | everyone | Use the menu and messaging commands |
+| `friendsystem.use` | everyone | Use the friends list and messaging commands |
 | `friendsystem.mod` | op | Bypass message privacy settings |
 | `friendsystem.owner` | op | Bypass message privacy settings |
 | `friendsystem.color.<colour>` | op | Use one message colour |

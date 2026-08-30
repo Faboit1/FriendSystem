@@ -35,7 +35,7 @@ messages:
   max-length: 150
 
 # Advancement toasts for new messages, friend requests and accepted requests.
-# Players can also turn them off individually in the settings dialog.
+# Players can also turn them off individually with /showfriendtoasts.
 toasts: true
 
 sounds:
@@ -66,9 +66,3 @@ integrations:
   auto-accept-tpa-here:
     enabled: true
     command: "autoaccepttpaherefrom %player% %value%"
-  # When /friends settings is used there is no menu behind the dialog. Enable
-  # this to send the Back button to your server's own settings menu instead;
-  # with it disabled, Back opens the friends menu.
-  settings-back:
-    enabled: false
-    command: "settings"

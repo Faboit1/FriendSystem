@@ -1,12 +1,10 @@
 package com.faboit.friendsystem.command;
 
-import com.faboit.friendsystem.FriendConfig;
 import com.faboit.friendsystem.api.FriendRequestResult;
 import com.faboit.friendsystem.data.DataStore;
 import com.faboit.friendsystem.service.FriendService;
 import com.faboit.friendsystem.service.Notifier;
 import com.faboit.friendsystem.service.PlayerLookup;
-import com.faboit.friendsystem.service.SessionManager;
 import com.faboit.friendsystem.ui.Navigator;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,26 +16,21 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-/** {@code /friends} — opens the menu, or performs a quick action without the GUI. */
+/** {@code /friends} — opens the friends list, or performs a quick action without the GUI. */
 public final class FriendsCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = List.of(
-        "add", "remove", "block", "unblock", "accept", "deny", "requests", "blocked", "settings");
+        "add", "remove", "block", "unblock", "accept", "deny", "requests", "blocked");
 
     private final DataStore store;
-    private final FriendConfig config;
-    private final SessionManager sessions;
     private final Navigator navigator;
     private final FriendService friends;
     private final Notifier notifier;
     private final PlayerLookup lookup;
 
-    public FriendsCommand(final DataStore store, final FriendConfig config, final SessionManager sessions,
-                          final Navigator navigator, final FriendService friends, final Notifier notifier,
-                          final PlayerLookup lookup) {
+    public FriendsCommand(final DataStore store, final Navigator navigator, final FriendService friends,
+                          final Notifier notifier, final PlayerLookup lookup) {
         this.store = store;
-        this.config = config;
-        this.sessions = sessions;
         this.navigator = navigator;
         this.friends = friends;
         this.notifier = notifier;
@@ -51,8 +44,7 @@ public final class FriendsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (args.length == 0) {
-            this.sessions.of(player).backCommand(null);
-            this.navigator.menu(player);
+            this.navigator.friends(player);
             return true;
         }
 
@@ -99,21 +91,8 @@ public final class FriendsCommand implements CommandExecutor, TabCompleter {
                     this.notifier.feedback(player, "<yellow>You have no friend request from that player.</yellow>");
                 }
             });
-            case "requests" -> {
-                this.sessions.of(player).backCommand(null);
-                this.navigator.requests(player);
-            }
-            case "blocked" -> {
-                this.sessions.of(player).backCommand(null);
-                this.navigator.blocked(player);
-            }
-            case "settings" -> {
-                // Opened without a menu behind it, so Back can be pointed at the server's
-                // own settings menu instead of a menu the player never came from.
-                final FriendConfig.Integration back = this.config.settingsBack();
-                this.sessions.of(player).backCommand(back.enabled() ? back.command() : null);
-                this.navigator.settings(player);
-            }
+            case "requests" -> this.navigator.requests(player);
+            case "blocked" -> this.navigator.blocked(player);
             default -> this.notifier.feedback(player, "<red>Unknown /friends subcommand. Try: "
                 + String.join(", ", SUBCOMMANDS) + ".</red>");
         }
